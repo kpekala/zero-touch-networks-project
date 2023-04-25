@@ -3,6 +3,23 @@ import tensorflow as tf
 from sklearn.cluster import DBSCAN, KMeans
 from matplotlib import pyplot as plt
 from math import inf
+from utils import flatten
+
+
+def make_simulation(links):
+    flows = flatten(links)
+
+    # Stage 1
+    base_clusters, noise = dbscan(np.array(flows))
+    tp_clusters = tp_cluster(base_clusters, noise, 0.5, 1)
+
+    # Stage 2 and 3
+    f, trace = compute_fof(tp_clusters)
+
+    # Stage 4
+    nlof_scores = compute_nlof_scores(links, trace, 0.1)
+
+    return nlof_scores
 
 
 def dbscan(x):
@@ -10,34 +27,27 @@ def dbscan(x):
     clustering = DBSCAN(eps=2).fit(x.reshape(-1, 1))
     x_labels = clustering.labels_.tolist()
     clusters = [[] for _ in range(max(x_labels) + 1)]
-    noice = []
+    noise = []
     for i in range(len(x_list)):
         if x_labels[i] == -1:
-            noice.append(x_list[i])
+            noise.append(x_list[i])
         else:
             clusters[x_labels[i]].append(x_list[i])
-    return clusters, noice
+    return clusters, noise
 
 
-def subset_of_sets(_set: set, sets):
-    return len([s for s in sets if all([x in s for x in _set])]) > 0
-
-
-def tp_cluster(clusters: set, noise: set, tp_ratio: float, tp_deviation: float):
+def tp_cluster(clusters: list, noise: list, tp_ratio: float, tp_deviation: float):
     """
         Parameters :
-            clusters : set
-                Set of DBSCAN cluster sets in descending throughput order
-            noise : set
-                Set of DBSCAN noice flows
+            clusters : list of DBSCAN cluster sets in descending throughput order
+            noise : list of DBSCAN noise flows
             tp_ratio : float
                 Ratio used to determine if two DBSCAN clusters can be combined into one TPCluster
             tp_deviation : float
                 The relative distance a noise flow can be away from a TPCluster to be assigned to that cluster
 
         Returns :
-            cs : set
-                set of TPClusters
+            cs : set of TPClusters
     """
 
     r = 0
@@ -67,13 +77,17 @@ def tp_cluster(clusters: set, noise: set, tp_ratio: float, tp_deviation: float):
     return cs
 
 
+def subset_of_sets(_set: set, sets):
+    return len([s for s in sets if all([x in s for x in _set])]) > 0
+
+
 def compute_fof(cs):
     """
         Parameters:
             cs : list of TPClusters
 
         Returns:
-            f: 2d list
+            f : list
                 FOF score for each flow in each cluster
             trace : dict
                 dictionary mapping throughput to fof score
@@ -95,7 +109,7 @@ def compute_fof(cs):
     return f, trace
 
 
-def compute_nlof_scores(links, trace, gamma):
+def compute_nlof_scores(links: list, trace: dict, gamma: float):
     """
         Parameters:
             links : 2d list

@@ -140,3 +140,4 @@ ui-tests/.pnp.*
 /.idea/inspectionProfiles/profiles_settings.xml
 /.idea/vcs.xml
 /.idea/zero-touch-networks-project.iml
+/.idea/other.xml
