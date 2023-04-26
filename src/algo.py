@@ -17,7 +17,7 @@ def make_simulation(links):
     f, trace = compute_fof(tp_clusters)
 
     # Stage 4
-    nlof_scores = compute_nlof_scores(links, trace, 0.1)
+    nlof_scores = compute_nlof_scores(links, trace, 0.3)
 
     return nlof_scores
 
@@ -125,6 +125,8 @@ def compute_nlof_scores(links: list, trace: dict, gamma: float):
     """
     scores = [0.0] * len(links)
     for i in range(len(links)):
+        if len(links[i]) == 0:
+            continue
         r = 0
         for j in range(len(links[i])):
             if trace[links[i][j]] > gamma:
