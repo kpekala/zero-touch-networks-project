@@ -150,7 +150,6 @@ def learn_nlof_mll(epochs_numb: int, flows_batch: list[list], paths_batch: list[
     wages_batch = [[] for _ in range(epochs_numb)]
     for epoch in range(epochs_numb):
         flows = flows_batch[epoch]
-        print('asdasda')
         paths = paths_batch[epoch]
 
         base_clusters, noise = dbscan(np.array(flatten(flows)))
