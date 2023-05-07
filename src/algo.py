@@ -3,7 +3,8 @@ import tensorflow as tf
 from sklearn.cluster import DBSCAN, KMeans
 from matplotlib import pyplot as plt
 from math import inf
-from utils import flatten
+
+from src.utils import flatten
 
 
 def make_simulation(links):
@@ -117,7 +118,7 @@ def compute_nlof_scores(links: list, trace: dict, gamma: float):
             trace : dict
                 dictionary mapping throughput to fof score
             gamma : float
-                Outlier treshold
+                Outlier threshold
 
         Returns:
             scores : list
@@ -133,3 +134,32 @@ def compute_nlof_scores(links: list, trace: dict, gamma: float):
                 r += 1
         scores[i] = r / len(links[i])
     return scores
+
+
+def compute_nlof_mll_scores(links_batches: list, path_batches: list, path_trace: dict, trace: dict, gamma: float):
+    N = len(links_batches[0])  # number of links
+    K = 1  # number of previous epochs to learn from
+    T = len(links_batches)  # number of epochs
+    delta = 0.1
+    wages = [[0.0] * N for _ in range(T)]
+    EPS = 0.001
+    for t in range(T):
+        paths_code = path_batches[t]
+        if t == 0:
+            initial_wages = [EPS] * N
+        else:
+            initial_wages = [sum([wages[t - j][i] for j in range(1, K + 1)]) / K for i in range(N)]
+        wages[t] = initial_wages
+        flows = links_batches[t]
+        for i in range(N):
+            for f in range(len(flows[i])):
+                fof = trace[flows[i][f]]
+                if fof > gamma:
+                    p = path_trace[paths_code[i][f]]
+                    wages[t][i] += wages[t][i] / np.dot(np.array(wages[t], np.array(p)))
+                else:
+                    wages[t][i] -= min(1.0, delta * wages[t][i])
+
+            # normalise wages
+            wages[t][i] = wages[t][i] / (len(flows[i]) + initial_wages[i])
+        return wages[-1]
