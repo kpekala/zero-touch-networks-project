@@ -1,7 +1,5 @@
 import numpy as np
-import tensorflow as tf
 from sklearn.cluster import DBSCAN, KMeans
-from matplotlib import pyplot as plt
 from math import inf
 
 from src.utils import flatten
