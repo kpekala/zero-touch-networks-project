@@ -1,8 +1,15 @@
 import random
 import unittest
-import algo
+from src import algo
 from random import sample
 import numpy as np
+
+
+def mock_trace(flows):
+    trace = dict()
+    for flow in flows:
+        trace[flow] = random.random()
+    return trace
 
 
 class AlgoTestCase(unittest.TestCase):
@@ -16,7 +23,7 @@ class AlgoTestCase(unittest.TestCase):
         self.assertEqual(FLOWS_NUMBER, len(flows))
         self.assertEqual(LINKS_NUMBER, len(links))
 
-        trace = self.mock_trace(flows)
+        trace = mock_trace(flows)
 
         nlof_scores = algo.compute_nlof_scores(links, trace, GAMMA)
 
@@ -46,12 +53,6 @@ class AlgoTestCase(unittest.TestCase):
         for c in cs:
             print(c)
             self.assertTrue(trace[c[0]] == max([trace[c_i] for c_i in c]))
-
-    def mock_trace(self, flows):
-        trace = dict()
-        for flow in flows:
-            trace[flow] = random.random()
-        return trace
 
 
 if __name__ == '__main__':

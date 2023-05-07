@@ -136,28 +136,52 @@ def compute_nlof_scores(links: list, trace: dict, gamma: float):
 
 def compute_nlof_mll_scores(links_batches: list, path_batches: list, path_trace: dict, trace: dict, gamma: float):
     N = len(links_batches[0])  # number of links
-    K = 1  # number of previous epochs to learn from
     T = len(links_batches)  # number of epochs
-    delta = 0.1
     wages = [[0.0] * N for _ in range(T)]
-    EPS = 0.001
     for t in range(T):
-        paths_code = path_batches[t]
-        if t == 0:
-            initial_wages = [EPS] * N
-        else:
-            initial_wages = [sum([wages[t - j][i] for j in range(1, K + 1)]) / K for i in range(N)]
-        wages[t] = initial_wages
-        flows = links_batches[t]
-        for i in range(N):
-            for f in range(len(flows[i])):
-                fof = trace[flows[i][f]]
-                if fof > gamma:
-                    p = path_trace[paths_code[i][f]]
-                    wages[t][i] += wages[t][i] / np.dot(np.array(wages[t], np.array(p)))
-                else:
-                    wages[t][i] -= min(1.0, delta * wages[t][i])
+        paths = [path_trace[path_batches[t][i]] for i in range(N)]
+        update_wages_for_epoch(wages[:t], links_batches[t], paths, trace, gamma, t)
 
-            # normalise wages
-            wages[t][i] = wages[t][i] / (len(flows[i]) + initial_wages[i])
-        return wages[-1]
+    return wages[-1]
+
+
+def learn_nlof_mll(epochs_numb: int, flows_batch: list[list], paths_batch: list[list]):
+    gamma = 0.3
+    wages_batch = [[] for _ in range(epochs_numb)]
+    for epoch in range(epochs_numb):
+        flows = flows_batch[epoch]
+        print('asdasda')
+        paths = paths_batch[epoch]
+
+        base_clusters, noise = dbscan(np.array(flatten(flows)))
+        tp_clusters = tp_cluster(base_clusters, noise, 0.5, 1)
+
+        f, trace = compute_fof(tp_clusters)
+
+        wages_batch[epoch] = update_wages_for_epoch(wages_batch[:epoch], flows, paths, trace, gamma, epoch)
+    return wages_batch
+
+
+def update_wages_for_epoch(prev_wages: list, flows: list, paths: list, trace: dict, gamma: float, t: int):
+    EPS = 0.001  # small initial value for every wage
+    delta = 0.1  # learning speed
+    K = 1  # number of previous epochs to learn from
+    N = len(flows)
+
+    if t == 0:
+        initial_wages = [EPS] * N
+    else:
+        initial_wages = [sum([prev_wages[-j][i] for j in range(1, K + 1)]) / K for i in range(N)]
+    wages = initial_wages
+    for i in range(N):
+        for f in range(len(flows[i])):
+            fof = trace[flows[i][f]]
+            if fof > gamma:
+                p = paths[i][f]
+                wages[i] += wages[i] / np.dot(np.array(wages), np.array(p))
+            else:
+                wages[i] -= min(1.0, delta * wages[i])
+
+        # normalise wages
+        wages[i] = wages[i] / (len(flows[i]) + initial_wages[i])
+    return wages
