@@ -145,6 +145,27 @@ def compute_nlof_mll_scores(links_batches: list, path_batches: list, path_trace:
     return wages[-1]
 
 
+def transform_input(tps, path_vectors, n_links):
+    n_flows = len(tps)
+    links = [[] for _ in range(n_links)]
+    paths_per_link = [[] for _ in range(n_links)]
+    for i in range(n_flows):
+        path = path_vectors[i]
+        tp = tps[i]
+        new_path = binary_path(path, n_links)
+        for link_i in path:
+            links[link_i].append(tp)
+            paths_per_link[link_i].append(new_path)
+    return links, paths_per_link
+
+
+def binary_path(path, n_links):
+    new_path = [0] * n_links
+    for p in path:
+        new_path[p] = 1
+    return new_path
+
+
 def learn_nlof_mll(epochs_numb: int, flows_batch: list[list], paths_batch: list[list]):
     gamma = 0.3
     wages_batch = [[] for _ in range(epochs_numb)]
