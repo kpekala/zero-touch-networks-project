@@ -1,4 +1,4 @@
-from src import algo
+import algo
 
 
 def nlof_mll_demo():

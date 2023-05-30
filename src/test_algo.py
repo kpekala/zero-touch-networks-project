@@ -1,6 +1,6 @@
 import random
 import unittest
-from src import algo
+import algo
 from random import sample
 import numpy as np
 

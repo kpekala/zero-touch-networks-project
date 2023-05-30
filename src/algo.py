@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.cluster import DBSCAN, KMeans
 from math import inf
 
-from src.utils import flatten
+from utils import flatten
 
 
 def make_simulation(links):
